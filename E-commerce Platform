@@ -1,0 +1,154 @@
+import java.io.*;
+import java.util.*;
+
+class Product {
+    private int id;
+    private String name;
+    private double price;
+    private int stock;
+
+    public Product(int id, String name, double price, int stock) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public int getStock() { return stock; }
+    public void reduceStock(int qty) { this.stock -= qty; }
+
+    @Override
+    public String toString() {
+        return id + ". " + name + " - ₹" + price + " (Stock: " + stock + ")";
+    }
+}
+
+class CartItem {
+    private Product product;
+    private int quantity;
+
+    public CartItem(Product product, int quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
+
+    public double getTotal() { return product.getPrice() * quantity; }
+    public Product getProduct() { return product; }
+    public int getQuantity() { return quantity; }
+
+    @Override
+    public String toString() {
+        return product.getName() + " x" + quantity + " = ₹" + getTotal();
+    }
+}
+
+public class ECommerceApp {
+    private static List<Product> products = new ArrayList<>();
+    private static List<CartItem> cart = new ArrayList<>();
+
+    public static void main(String[] args) throws IOException {
+        // Sample products
+        products.add(new Product(1, "Wireless Mouse", 799.0, 10));
+        products.add(new Product(2, "Mechanical Keyboard", 2499.0, 5));
+        products.add(new Product(3, "USB-C Charger", 1299.0, 15));
+
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\n=== E-Commerce Menu ===");
+            System.out.println("1. View Products");
+            System.out.println("2. Add to Cart");
+            System.out.println("3. View Cart");
+            System.out.println("4. Checkout");
+            System.out.println("5. Exit");
+            System.out.print("Choose: ");
+
+            int choice = sc.nextInt();
+            switch (choice) {
+                case 1:
+                    viewProducts();
+                    break;
+                case 2:
+                    addToCart(sc);
+                    break;
+                case 3:
+                    viewCart();
+                    break;
+                case 4:
+                    checkout();
+                    break;
+                case 5:
+                    System.out.println("Thank you for shopping!");
+                    sc.close();
+                    return;
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    private static void viewProducts() {
+        System.out.println("\nAvailable Products:");
+        for (Product p : products) {
+            System.out.println(p);
+        }
+    }
+
+    private static void addToCart(Scanner sc) {
+        System.out.print("Enter Product ID: ");
+        int id = sc.nextInt();
+        Product selected = products.stream().filter(p -> p.getId() == id).findFirst().orElse(null);
+
+        if (selected == null) {
+            System.out.println("Product not found!");
+            return;
+        }
+
+        System.out.print("Enter quantity: ");
+        int qty = sc.nextInt();
+
+        if (qty > selected.getStock()) {
+            System.out.println("Not enough stock!");
+            return;
+        }
+
+        selected.reduceStock(qty);
+        cart.add(new CartItem(selected, qty));
+        System.out.println("Added to cart!");
+    }
+
+    private static void viewCart() {
+        System.out.println("\nYour Cart:");
+        double total = 0;
+        for (CartItem item : cart) {
+            System.out.println(item);
+            total += item.getTotal();
+        }
+        System.out.println("Total: ₹" + total);
+    }
+
+    private static void checkout() throws IOException {
+        if (cart.isEmpty()) {
+            System.out.println("Your cart is empty!");
+            return;
+        }
+
+        FileWriter fw = new FileWriter("orders.txt", true);
+        BufferedWriter bw = new BufferedWriter(fw);
+        bw.write("=== New Order ===\n");
+
+        double total = 0;
+        for (CartItem item : cart) {
+            bw.write(item.toString() + "\n");
+            total += item.getTotal();
+        }
+        bw.write("Order Total: ₹" + total + "\n\n");
+        bw.close();
+
+        System.out.println("Order placed successfully! Total: ₹" + total);
+        cart.clear();
+    }
+}
